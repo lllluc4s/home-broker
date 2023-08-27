@@ -19,8 +19,8 @@ jobs:
       - name: Construindo a imagem do worker # Constrói a imagem do worker no Docker Hub
         uses: docker/build-push-action@v4.1.1
         with:
-          context: ./home-broker/worker
-          file: ./home-broker/worker/Dockerfile
+          context: ./worker
+          file: ./worker/Dockerfile
           push: true
           tags: |
             r0drigu3s/trader-worker:${{github.run_number}}
