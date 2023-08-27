@@ -25,20 +25,20 @@ jobs:
           tags: |
             r0drigu3s/trader-worker:${{github.run_number}}
             r0drigu3s/trader-worker:latest
-      - name: Construindo a imagem do API # Constrói a imagem do API no Docker Hub
+      - name: Construindo a imagem da API # Constrói a imagem da API no Docker Hub
         uses: docker/build-push-action@v4.1.1
         with:
-          context: ./home-broker/api
-          file: ./home-broker/api/Dockerfile
+          context: ./api
+          file: .api/Dockerfile
           push: true
           tags: |
             r0drigu3s/trader-api:${{github.run_number}}
             r0drigu3s/trader-api:latest
-      - name: Construindo a imagem do frontend # Constrói a imagem do frontend no Docker Hub
+      - name: Construindo a imagem do Frontend # Constrói a imagem do frontend no Docker Hub
         uses: docker/build-push-action@v4.1.1
         with:
-          context: ./home-broker/frontend
-          file: ./home-broker/frontend/Dockerfile
+          context: ./frontend
+          file: ./frontend/Dockerfile
           push: true
           tags: |
             r0drigu3s/trader-web:${{github.run_number}}
