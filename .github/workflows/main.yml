@@ -2,43 +2,43 @@ name: CI-CD
 
 on:
   push:
-    branches: ['main']
-  workflow_dispatch:
+    branches: ['main'] # Para disparar o workflow quando houver push na branch main
+  workflow_dispatch: # Para disparar o workflow manualmente
 
 jobs:
   CI:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Sistema operacional
     steps:
-      - name: Checkout da base de código
+      - name: Checkout da base de código # Faz o checkout do código
         uses: actions/checkout@v3.5.3
       - name: Autenticação no Docker Hub
         uses: docker/login-action@v2.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USR }}
           password: ${{ secrets.DOCKERHUB_PWD }}
-      - name: Construindo a imagem do worker
+      - name: Construindo a imagem do worker # Constrói a imagem do worker no Docker Hub
         uses: docker/build-push-action@v4.1.1
         with:
-          context: ./home-broker/01-worker
-          file: ./home-broker/01-worker/Dockerfile
+          context: ./home-broker/worker
+          file: ./home-broker/worker/Dockerfile
           push: true
           tags: |
             r0drigu3s/trader-worker:${{github.run_number}}
             r0drigu3s/trader-worker:latest
-      - name: Construindo a imagem do api
+      - name: Construindo a imagem do API # Constrói a imagem do API no Docker Hub
         uses: docker/build-push-action@v4.1.1
         with:
-          context: ./home-broker/02-api
-          file: ./home-broker/02-api/Dockerfile
+          context: ./home-broker/api
+          file: ./home-broker/api/Dockerfile
           push: true
           tags: |
             r0drigu3s/trader-api:${{github.run_number}}
             r0drigu3s/trader-api:latest
-      - name: Construindo a imagem do frontend
+      - name: Construindo a imagem do frontend # Constrói a imagem do frontend no Docker Hub
         uses: docker/build-push-action@v4.1.1
         with:
-          context: ./home-broker/03-frontend
-          file: ./home-broker/03-frontend/Dockerfile
+          context: ./home-broker/frontend
+          file: ./home-broker/frontend/Dockerfile
           push: true
           tags: |
             r0drigu3s/trader-web:${{github.run_number}}
@@ -46,43 +46,45 @@ jobs:
           build-args: |
             next_url=a6f33c0fbbb5347f1b7f1833bd9d1daa-157400115.us-east-1.elb.amazonaws.com
             next_url_api=a22bba60b4ca440b393dd90ce091c783-466327151.us-east-1.elb.amazonaws.com
+          # URL do Load Balancer do frontend
+          # URL do Load Balancer do API
 
   CD:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Sistema operacional
     needs: [CI]
     steps:
-      - name: Checkout da base de código
+      - name: Checkout da base de código # Faz o checkout do código
         uses: actions/checkout@v3.5.3
-      - name: Configurar as credenciais de acesso
+      - name: Configurar as credenciais de acesso # Configura as credenciais de acesso da AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Configuração do Kubeconfig
-        shell: bash
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # Chave de acesso da AWS
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Chave secreta de acesso da AWS
+          aws-region: us-east-1 # Região da AWS
+      - name: Configuração do Kubeconfig # Configura o Kubeconfig
+        shell: bash # Indica que o shell utilizado será o bash
         run: |
           aws eks update-kubeconfig --name imersao-eks --region us-east-1
-      - name: Deploy do worker no cluster Kubernetes
+      - name: Deploy do worker no cluster Kubernetes # Faz o deploy do worker no cluster Kubernetes
         uses: Azure/k8s-deploy@v4.9
         with:
           manifests: |
-            home-broker/04-k8s-deploy/02-worker/deployment.yaml
+            home-broker/k8s/worker/deployment.yaml
           images: |
             r0drigu3s/trader-worker:${{github.run_number}}
 
-      - name: Deploy da api no cluster Kubernetes
+      - name: Deploy da api no cluster Kubernetes # Faz o deploy do API no cluster Kubernetes
         uses: Azure/k8s-deploy@v4.9
         with:
           manifests: |
-            home-broker/04-k8s-deploy/03-api/deployment.yaml
+            home-broker/k8s/api/deployment.yaml
           images: |
             r0drigu3s/trader-api:${{github.run_number}}
 
-      - name: Deploy do frontend no cluster Kubernetes
+      - name: Deploy do frontend no cluster Kubernetes # Faz o deploy do frontend no cluster Kubernetes
         uses: Azure/k8s-deploy@v4.9
         with:
           manifests: |
-            home-broker/04-k8s-deploy/04-frontend/deployment.yaml
+            home-broker/k8s/frontend/deployment.yaml
           images: |
             r0drigu3s/trader-web:${{github.run_number}}
